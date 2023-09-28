@@ -57,8 +57,26 @@ const login = catchError(async (req, res) => {
 });
 
 const getLoggedUser = catchError(async (req, res) => {
-  const user = req.User;
-  return res.json(user);
+  try {
+    // Verify the token and get the user information
+    const authHeader = req.headers.authorization || req.headers.Authorization;
+    if (!authHeader?.startsWith("Bearer ")) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const token = authHeader.split(" ")[1];
+    const decodedToken = jwt.verify(token, process.env.TOKEN_SECRET);
+
+    // Use the user information from the decoded token
+    const user = await User.findByPk(decodedToken.userId);
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    return res.json(user);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 module.exports = {
