@@ -94,15 +94,23 @@ const remove = catchError(async (req, res) => {
       process.env.TOKEN_SECRET
     );
 
+    console.log("Request received to delete cart item with ID:", id);
+    console.log("Decoded token:", decodedToken);
+
     const result = await Cart.findByPk(id);
-    if (!result) return res.sendStatus(404);
+    if (!result) {
+      console.log("Cart item not found.");
+      return res.sendStatus(404);
+    }
 
     // Check if the user is the owner of the cart item
     if (result.userId !== decodedToken.userId) {
+      console.log("User is not the owner of the cart item.");
       return res.status(403).json({ message: "Forbidden" });
     }
 
     await Cart.destroy({ where: { id } });
+    console.log("Cart item deleted successfully.");
     return res.sendStatus(204);
   } catch (error) {
     console.error(error);
