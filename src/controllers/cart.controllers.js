@@ -17,8 +17,7 @@ const getAll = catchError(async (req, res) => {
       include: [
         {
           model: Product,
-          attributes: ["id", "name", "price", "description"], // Add "image" to select image URL
-          include: [ProductImg], // Include the associated ProductImg model
+          include: ProductImg,
         },
       ],
       where: { userId: decodedToken.userId }, // Use the user's ID from the decoded token
@@ -44,7 +43,7 @@ const create = catchError(async (req, res) => {
     );
 
     const result = await Cart.create({
-      productId: productId,
+      productId,
       quantity,
       userId: decodedToken.userId,
     });
@@ -121,6 +120,7 @@ const remove = catchError(async (req, res) => {
 const update = catchError(async (req, res) => {
   try {
     const { id } = req.params;
+    const { quantity } = req.body;
     const token = req.headers.authorization || req.headers.Authorization;
     if (!token?.startsWith("Bearer ")) {
       return res.status(401).json({ message: "Unauthorized" });
@@ -138,10 +138,13 @@ const update = catchError(async (req, res) => {
       return res.status(403).json({ message: "Forbidden" });
     }
 
-    const updatedCart = await Cart.update(req.body, {
-      where: { id },
-      returning: true,
-    });
+    const updatedCart = await Cart.update(
+      { quantity },
+      {
+        where: { id },
+        returning: true,
+      }
+    );
 
     if (updatedCart[0] === 0) return res.sendStatus(404);
     return res.json(updatedCart[1][0]);
